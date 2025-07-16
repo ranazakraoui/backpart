@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle Demande de Formation</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #f8f9fc;
+            --accent-color: #2e59d9;
+            --text-color: #5a5c69;
+            --error-color: #e74a3b;
+            --success-color: #1cc88a;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+        }
+
+        .form-container {
+            max-width: 650px;
+            margin: 3rem auto;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            background: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .form-header h2 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 3px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .form-control, .form-select {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #d1d3e2;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .invalid-feedback {
+            font-size: 0.85rem;
+            color: var(--error-color);
+        }
+
+        .is-invalid {
+            border-color: var(--error-color) !important;
+        }
+
+        .alert {
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 74, 59, 0.1);
+            border-color: rgba(231, 74, 59, 0.2);
+            color: var(--error-color);
+        }
+
+        .alert-success {
+            background-color: rgba(28, 200, 138, 0.1);
+            border-color: rgba(28, 200, 138, 0.2);
+            color: var(--success-color);
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #b7b9cc;
+        }
+
+        .input-icon input {
+            padding-left: 40px;
+        }
+
+        .required-field::after {
+            content: " *";
+            color: var(--error-color);
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                margin: 1.5rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h2>
+                <i class="fas fa-graduation-cap me-2"></i>Demande de Formation
+            </h2>
+            <p class="text-muted">Remplissez ce formulaire pour soumettre votre demande de formation</p>
+        </div>
+
+        <!-- Messages d'erreur/succès -->
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${success}"></span>
+        </div>
+
+        <form th:action="@{/demandes/save}" th:object="${demande}" method="post" novalidate>
+
+            <!-- Champ Nom -->
+            <div class="mb-4">
+                <label for="nomCollaborateur" class="form-label required-field">Nom complet</label>
+                <div class="input-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" class="form-control" id="nomCollaborateur"
+                           th:field="*{nomCollaborateur}"
+                           placeholder="Votre nom complet"
+                           th:classappend="${#fields.hasErrors('nomCollaborateur')} ? 'is-invalid'">
+                </div>
+                <div class="invalid-feedback"
+                     th:if="${#fields.hasErrors('nomCollaborateur')}"
+                     th:errors="*{nomCollaborateur}"></div>
+            </div>
+
+            <!-- Champ Email -->
+            <div class="mb-4">
+                <label for="emailCollaborateur" class="form-label required-field">Email professionnel</label>
+                <div class="input-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" class="form-control" id="emailCollaborateur"
+                           th:field="*{emailCollaborateur}"
+                           placeholder="votre@email.com"
+                           th:classappend="${#fields.hasErrors('emailCollaborateur')} ? 'is-invalid'">
+                </div>
+                <div class="invalid-feedback"
+                     th:if="${#fields.hasErrors('emailCollaborateur')}"
+                     th:errors="*{emailCollaborateur}"></div>
+            </div>
+
+            <!-- Sélection Formation -->
+            <div class="mb-4">
+                <label for="formationId" class="form-label required-field">Formation souhaitée</label>
+                <select class="form-select" id="formationId"
+                        th:field="*{formationId}"
+                        th:classappend="${#fields.hasErrors('formationId')} ? 'is-invalid'">
+                    <option value="" disabled selected>-- Sélectionnez une formation --</option>
+                    <option th:each="formation : ${formations}"
+                            th:value="${formation.id}"
+                            th:text="${formation.titre} + ' (' + ${formation.duree} + 'h)'">
+                    </option>
+                </select>
+                <div class="invalid-feedback"
+                     th:if="${#fields.hasErrors('formationId')}"
+                     th:errors="*{formationId}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-2"></i>Soumettre la demande
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

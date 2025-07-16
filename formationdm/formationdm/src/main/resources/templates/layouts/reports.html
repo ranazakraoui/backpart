@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head}"></head>
+<body>
+<div class="app-container">
+  <!-- Sidebar -->
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="header">
+      <h2 class="fw-bold">Rapports et Statistiques</h2>
+      <div class="user-profile">
+        <img src="https://ui-avatars.com/api/?name=Admin+User" class="rounded-circle me-2" width="40">
+        <span class="fw-semibold">Admin User</span>
+      </div>
+    </div>
+
+    <!-- Statistics Charts -->
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5>Activité Récente</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="activityChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5>Statut des Commandes</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="orderStatusChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div th:replace="~{fragments/scripts :: scripts}"></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Commandes',
+          data: [12, 19, 3, 5, 2, 3],
+          borderColor: '#4361ee',
+          backgroundColor: 'rgba(67, 97, 238, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' }
+        }
+      }
+    });
+
+    // Order Status Chart
+    const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    new Chart(orderStatusCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Complétés', 'En attente', 'Annulés'],
+        datasets: [{
+          data: [65, 25, 10],
+          backgroundColor: ['#4cc9f0', '#4895ef', '#4361ee'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '70%',
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>
+```

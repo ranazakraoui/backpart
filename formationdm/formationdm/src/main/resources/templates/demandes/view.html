@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Détails de la Demande</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>Détails de la Demande</h2>
+        </div>
+        <div class="card-body">
+            <div th:if="${demande}">
+                <dl class="row">
+                    <dt class="col-sm-3">ID</dt>
+                    <dd class="col-sm-9" th:text="${demande.id}"></dd>
+
+                    <dt class="col-sm-3">Nom</dt>
+                    <dd class="col-sm-9" th:text="${demande.nomCollaborateur}"></dd>
+
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9" th:text="${demande.emailCollaborateur}"></dd>
+
+                    <dt class="col-sm-3">Date</dt>
+                    <dd class="col-sm-9" th:text="${demande.formattedDateDemande}"></dd>
+
+                    <dt class="col-sm-3">Statut</dt>
+                    <dd class="col-sm-9" th:text="${demande.statut}"></dd>
+
+                    <dt class="col-sm-3">Formation</dt>
+                    <dd class="col-sm-9" th:text="${demande.formationTitre}"></dd>
+                </dl>
+                <a th:href="@{/demandes}" class="btn btn-secondary">Retour</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

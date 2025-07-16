@@ -1,0 +1,32 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <h2>Liste des Formations</h2>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Description</th>
+            <th>Durée</th>
+            <th>Planifiée</th>
+            <th>Demandes</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="formation : ${formations}">
+            <td th:text="${formation.id}"></td>
+            <td th:text="${formation.titre}"></td>
+            <td th:text="${formation.description}"></td>
+            <td th:text="${formation.duree} + ' heures'"></td>
+            <td th:text="${formation.tauxPlanification} + '%'"></td>
+            <td th:text="${formation.nbDemandes} + ' demandes'"></td>
+            <td>
+                <a th:href="@{/formations/edit/{id}(id=${formation.id})}" class="btn btn-warning btn-sm">Modifier</a>
+                <a th:href="@{/formations/details/{id}(id=${formation.id})}" class="btn btn-info btn-sm">Détails</a>
+                <a th:href="@{/formations/delete/{id}(id=${formation.id})}" class="btn btn-danger btn-sm">Supprimer</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
