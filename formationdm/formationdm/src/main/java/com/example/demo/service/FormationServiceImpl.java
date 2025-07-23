@@ -150,7 +150,11 @@ public class FormationServiceImpl implements FormationService {
     }
 
 
-
+    @Override
+    public boolean isFormationDisponible(Long formationId) {
+        FormationDTO formation = getFormationById(formationId);
+        return formation != null && formation.isPlanifiee();
+    }
 
     // Méthodes helper
     private Formation toEntity(FormationDTO dto) {

@@ -1,15 +1,19 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.DemandeFormationDTO;
+import com.example.demo.dto.FormationDTO;
 import com.example.demo.model.Formation;
 import com.example.demo.repository.DemandeFormationRepository;
 import com.example.demo.service.DemandeFormationService;
 import com.example.demo.service.FormationService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,4 +84,44 @@ public class DemandeFormationApiController {
             return ResponseEntity.badRequest().body("Erreur lors de la mise à jour du statut : " + e.getMessage());
         }
     }
+
+
+    @PostMapping
+    public ResponseEntity<?> createDemande(@RequestBody @Valid DemandeFormationDTO demandeDTO,
+                                           BindingResult bindingResult) {
+
+        // Validation
+        if (bindingResult.hasErrors()) {
+            return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+        }
+
+        // Vérification formation
+        FormationDTO formation = formationService.getFormationById(demandeDTO.getFormationId());
+        if (formation == null) {
+            return ResponseEntity.badRequest().body("Formation introuvable");
+        }
+        if (!formation.isPlanifiee()) {
+            return ResponseEntity.badRequest().body("La formation n'est pas encore planifiée");
+        }
+
+        try {
+            demandeDTO.setStatut("EN_ATTENTE");
+            demandeDTO.setDateDemande(new Date());
+
+            // Assurez-vous que createDemande retourne le DTO sauvegardé
+            DemandeFormationDTO savedDemande = demandeFormationService.createDemande(demandeDTO);
+            return ResponseEntity.ok(savedDemande);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Erreur: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+
+
+
 }

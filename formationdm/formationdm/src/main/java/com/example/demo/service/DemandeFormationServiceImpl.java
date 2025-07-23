@@ -27,23 +27,80 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
     }
 
     @Override
+    public DemandeFormationDTO createDemande(DemandeFormationDTO demandeDTO) {
+        // Validation initiale
+        if (demandeDTO.getFormationId() == null) {
+            throw new IllegalArgumentException("L'ID de formation est obligatoire");
+        }
+
+        // Valeurs par défaut
+        demandeDTO.setStatut("EN_ATTENTE");
+        demandeDTO.setDateDemande(new Date());
+
+        return this.saveDemande(demandeDTO);
+    }
+
+    @Override
+    @Deprecated
     public DemandeFormationDTO saveDemande(DemandeFormationDTO demandeDTO) {
         Formation formation = formationRepository.findById(demandeDTO.getFormationId())
                 .orElseThrow(() -> new NoSuchElementException("Formation non trouvée avec l'ID: " + demandeDTO.getFormationId()));
 
         DemandeFormation demande = new DemandeFormation();
-        demande.setDateDemande(new Date());
+        demande.setDateDemande(demandeDTO.getDateDemande());
         demande.setEmailCollaborateur(demandeDTO.getEmailCollaborateur());
         demande.setNomCollaborateur(demandeDTO.getNomCollaborateur());
-        demande.setStatut("EN_ATTENTE");
+        demande.setStatut(demandeDTO.getStatut());
         demande.setFormation(formation);
+
+        DemandeFormation savedDemande = demandeFormationRepository.save(demande);
+        return convertToDto(savedDemande);
+    }
+
+    @Override
+    public DemandeFormationDTO updateDemande(Long id, DemandeFormationDTO demandeDTO) {
+        DemandeFormation demande = demandeFormationRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Demande non trouvée avec l'ID: " + id));
+
+        Formation formation = formationRepository.findById(demandeDTO.getFormationId())
+                .orElseThrow(() -> new NoSuchElementException("Formation non trouvée avec l'ID: " + demandeDTO.getFormationId()));
+
+        // Mise à jour des champs
+        demande.setEmailCollaborateur(demandeDTO.getEmailCollaborateur());
+        demande.setNomCollaborateur(demandeDTO.getNomCollaborateur());
+        demande.setStatut(demandeDTO.getStatut());
+        demande.setFormation(formation);
+
+        // Logique de planification automatique
+        if ("APPROUVEE".equals(demandeDTO.getStatut())) {
+            long approvedCount = demandeFormationRepository.countByFormationIdAndStatut(
+                    formation.getId(),
+                    "APPROUVEE"
+            );
+
+            if (approvedCount >= 5) {
+                formation.setPlanifiee(true);
+                formationRepository.save(formation);
+            }
+        }
 
         return convertToDto(demandeFormationRepository.save(demande));
     }
 
+    @Override
+    public void deleteDemande(Long id) {
+        if (!demandeFormationRepository.existsById(id)) {
+            throw new NoSuchElementException("Demande non trouvée avec l'ID: " + id);
+        }
+        demandeFormationRepository.deleteById(id);
+    }
 
-
-
+    @Override
+    public DemandeFormationDTO getDemandeById(Long id) {
+        return demandeFormationRepository.findById(id)
+                .map(this::convertToDto)
+                .orElseThrow(() -> new NoSuchElementException("Demande non trouvée avec l'ID: " + id));
+    }
 
     @Override
     public List<DemandeFormationDTO> getAllDemandes() {
@@ -93,10 +150,6 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
             throw new RuntimeException("Erreur lors de la récupération des formations", e);
         }
     }
-    @Override
-    public void createDemande(DemandeFormationDTO demande) {
-        this.saveDemande(demande);
-    }
 
     @Override
     public List<DemandeFormationDTO> getDemandesByFormationId(Long formationId) {
@@ -111,9 +164,8 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
         return demandeFormationRepository.findAll().stream()
                 .map(demande -> {
                     DemandeFormationDTO dto = convertToDto(demande);
-
-                    // Créez un FormationDTO complet
                     Formation formation = demande.getFormation();
+
                     FormationDTO formationDTO = new FormationDTO();
                     formationDTO.setId(formation.getId());
                     formationDTO.setTitre(formation.getTitre());
@@ -138,64 +190,4 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
         dto.setFormationTitre(demande.getFormation().getTitre());
         return dto;
     }
-
-    private DemandeFormationDTO convertToDtoWithFormation(DemandeFormation demande) {
-        return convertToDto(demande); // Même implémentation pour l'instant
-    }
-
-
-
-    @Override
-    public DemandeFormationDTO updateDemande(Long id, DemandeFormationDTO demandeDTO) {
-        // 1. Récupération de la demande existante
-        DemandeFormation demande = demandeFormationRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Demande non trouvée avec l'ID: " + id));
-
-        // 2. Validation de la formation associée
-        Formation formation = formationRepository.findById(demandeDTO.getFormationId())
-                .orElseThrow(() -> new NoSuchElementException("Formation non trouvée avec l'ID: " + demandeDTO.getFormationId()));
-
-        // 3. Mise à jour des champs
-        demande.setEmailCollaborateur(demandeDTO.getEmailCollaborateur());
-        demande.setNomCollaborateur(demandeDTO.getNomCollaborateur());
-        demande.setStatut(demandeDTO.getStatut());
-        demande.setFormation(formation);
-
-        // 4. Logique de planification automatique (nouveau)
-        if ("APPROUVEE".equals(demandeDTO.getStatut())) {
-            long approvedCount = demandeFormationRepository.countByFormationIdAndStatut(
-                    formation.getId(),
-                    "APPROUVEE"
-            );
-
-            if (approvedCount >= 5) { // Seuil configurable
-                formation.setPlanifiee(true);
-                formationRepository.save(formation); // Sauvegarde de la mise à jour
-            }
-        }
-
-        // 5. Sauvegarde et retour
-        return convertToDto(demandeFormationRepository.save(demande));
-    }
-
-    @Override
-    public void deleteDemande(Long id) {
-        if (!demandeFormationRepository.existsById(id)) {
-            throw new NoSuchElementException("Demande non trouvée avec l'ID: " + id);
-        }
-        demandeFormationRepository.deleteById(id);
-    }
-
-    @Override
-    public DemandeFormationDTO getDemandeById(Long id) {
-        return demandeFormationRepository.findById(id)
-                .map(this::convertToDto)
-                .orElseThrow(() -> new NoSuchElementException("Demande non trouvée avec l'ID: " + id));
-    }
-
-
-
-
-
-
 }

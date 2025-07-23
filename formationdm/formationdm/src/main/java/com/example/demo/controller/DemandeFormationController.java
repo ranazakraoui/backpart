@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.DemandeFormationDTO;
+import com.example.demo.dto.FormationDTO;
 import com.example.demo.service.DemandeFormationService;
 import com.example.demo.service.FormationService;
 import jakarta.validation.Valid;
@@ -46,32 +47,37 @@ public class DemandeFormationController {
                               BindingResult bindingResult,
                               Model model,
                               RedirectAttributes redirectAttributes) {
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("formations", formationService.findAll());
-            return "demandes/add";
-        }
-        try {
-            // Vérification des doublons
-            List<DemandeFormationDTO> existingDemandes = demandeFormationService.getAllDemandesWithFormation()
-                    .stream()
-                    .filter(d -> d.getEmailCollaborateur().equals(demande.getEmailCollaborateur())
-                            && d.getFormationId().equals(demande.getFormationId())
-                            && d.getDateDemande().equals(demande.getDateDemande()))
-                    .collect(Collectors.toList());
-            if (!existingDemandes.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "Une demande similaire existe déjà !");
-                return "redirect:/demandes/new";
-            }
 
-            demande.setStatut("EN_ATTENTE");
-            demande.setDateDemande(new Date());
-            demandeFormationService.createDemande(demande);
-            redirectAttributes.addFlashAttribute("success", "Demande créée avec succès !");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Erreur: " + e.getMessage());
+        // Debug logging
+        System.out.println("Démande reçue: " + demande);
+
+        if (bindingResult.hasErrors()) {
+            bindingResult.getAllErrors().forEach(error -> System.out.println(error.toString()));
             model.addAttribute("formations", formationService.findAll());
             return "demandes/add";
         }
+
+        FormationDTO formation = formationService.getFormationById(demande.getFormationId());
+        System.out.println("Formation trouvée: " + formation);
+
+        if (formation == null) {
+            System.out.println("ERREUR: Formation non trouvée avec ID: " + demande.getFormationId());
+            redirectAttributes.addFlashAttribute("error", "Formation introuvable");
+        } else if (!formation.isPlanifiee()) {
+            System.out.println("ERREUR: Formation non planifiée - ID: " + formation.getId());
+            redirectAttributes.addFlashAttribute("error", "La formation n'est pas encore planifiée");
+        } else {
+            try {
+                demande.setStatut("EN_ATTENTE");
+                demande.setDateDemande(new Date());
+                demandeFormationService.createDemande(demande);
+                redirectAttributes.addFlashAttribute("success", "Demande créée avec succès !");
+            } catch (Exception e) {
+                System.out.println("ERREUR: " + e.getMessage());
+                redirectAttributes.addFlashAttribute("error", "Erreur technique: " + e.getMessage());
+            }
+        }
+
         return "redirect:/demandes";
     }
 

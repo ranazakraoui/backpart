@@ -18,7 +18,7 @@ public interface FormationService {
     Formation getFormationEntityById(Long id); // Ajoutez cette ligne
     List<FormationDTO> getAllFormations();
     List<FormationDTO> getAllFormationsSorted(String sortBy, String direction);
-
+    boolean isFormationDisponible(Long formationId);
     // Filtrage et pagination
     Page<FormationDTO> getFilteredFormationsPaginated(
             int page, int size,

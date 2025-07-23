@@ -219,7 +219,11 @@ public class FormationController {
             return ResponseEntity.badRequest().build();
         }
     }
-
+    @GetMapping("/formations/{id}/disponible")
+    @ResponseBody
+    public boolean checkFormationDisponible(@PathVariable Long id) {
+        return formationService.isFormationDisponible(id);
+    }
     // ===== MÉTHODES COMMUNES =====
     private void handleFormationError(RedirectAttributes redirectAttributes, Exception e, String operation) {
         redirectAttributes.addFlashAttribute("error",
