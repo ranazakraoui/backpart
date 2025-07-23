@@ -1,14 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.DemandeFormationDTO;
-import com.example.demo.model.Formation;
-import com.example.demo.repository.DemandeFormationRepository;
 import com.example.demo.service.DemandeFormationService;
 import com.example.demo.service.FormationService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,56 +13,31 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/demandes")
+@CrossOrigin(origins = "http://localhost:4200")
 public class DemandeFormationController {
 
     private final DemandeFormationService demandeFormationService;
     private final FormationService formationService;
-    private final DemandeFormationRepository demandeFormationRepository;
 
     public DemandeFormationController(DemandeFormationService demandeFormationService,
-                                      FormationService formationService,
-                                      DemandeFormationRepository demandeFormationRepository) {
+                                      FormationService formationService) {
         this.demandeFormationService = demandeFormationService;
         this.formationService = formationService;
-        this.demandeFormationRepository = demandeFormationRepository;
     }
 
-    // Ajoutez cette méthode pour la pagination par défaut
     private Pageable getDefaultPageable() {
-        return PageRequest.of(0, 100); // 100 éléments par défaut
-    }
-    @GetMapping("/api/formulaire/{formationId}")
-    public ResponseEntity<DemandeFormationDTO> getFormulaireWithFormation(
-            @PathVariable Long formationId) {
-// APRÈS (utilise la nouvelle méthode qui retourne l'entité)
-        Formation formation = formationService.getFormationEntityById(formationId);
-        DemandeFormationDTO dto = new DemandeFormationDTO();
-        dto.setFormationId(formation.getId());
-        dto.setFormationTitre(formation.getTitre());
-        return ResponseEntity.ok(dto);
-    }
-    @GetMapping
-    public String listDemandes(Model model) {
-        try {
-            List<DemandeFormationDTO> demandes = demandeFormationService.getAllDemandesWithFormation();
-            model.addAttribute("demandes", demandes);
-            return "demandes/list";
-        } catch (Exception e) {
-            model.addAttribute("error", "Erreur lors du chargement: " + e.getMessage());
-            return "demandes/list";
-        }
+        return PageRequest.of(0, 20); // Réduit à 20 pour de meilleures performances
     }
 
     @GetMapping("/new")
     public String showCreateForm(Model model) {
         model.addAttribute("demande", new DemandeFormationDTO());
-        model.addAttribute("formations", formationService.findAll()); // Utilisez findAll() au lieu de getAllFormations()
+        model.addAttribute("formations", formationService.findAll());
         return "demandes/add";
     }
 
@@ -74,13 +46,23 @@ public class DemandeFormationController {
                               BindingResult bindingResult,
                               Model model,
                               RedirectAttributes redirectAttributes) {
-
         if (bindingResult.hasErrors()) {
             model.addAttribute("formations", formationService.findAll());
             return "demandes/add";
         }
-
         try {
+            // Vérification des doublons
+            List<DemandeFormationDTO> existingDemandes = demandeFormationService.getAllDemandesWithFormation()
+                    .stream()
+                    .filter(d -> d.getEmailCollaborateur().equals(demande.getEmailCollaborateur())
+                            && d.getFormationId().equals(demande.getFormationId())
+                            && d.getDateDemande().equals(demande.getDateDemande()))
+                    .collect(Collectors.toList());
+            if (!existingDemandes.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Une demande similaire existe déjà !");
+                return "redirect:/demandes/new";
+            }
+
             demande.setStatut("EN_ATTENTE");
             demande.setDateDemande(new Date());
             demandeFormationService.createDemande(demande);
@@ -90,18 +72,7 @@ public class DemandeFormationController {
             model.addAttribute("formations", formationService.findAll());
             return "demandes/add";
         }
-
         return "redirect:/demandes";
-    }
-
-    @GetMapping("/formations/demandes-count")
-    public ResponseEntity<Map<Long, Long>> getDemandesParFormation() {
-        List<Object[]> counts = demandeFormationRepository.countAllByFormation();
-        Map<Long, Long> result = new HashMap<>();
-        for (Object[] row : counts) {
-            result.put((Long) row[0], (Long) row[1]);
-        }
-        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")
@@ -125,12 +96,10 @@ public class DemandeFormationController {
                                 BindingResult bindingResult,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
-
         if (bindingResult.hasErrors()) {
             model.addAttribute("formations", formationService.findAll());
             return "demandes/edit";
         }
-
         try {
             demandeFormationService.updateDemande(id, demandeDTO);
             redirectAttributes.addFlashAttribute("success", "Demande mise à jour avec succès !");
@@ -138,7 +107,6 @@ public class DemandeFormationController {
             redirectAttributes.addFlashAttribute("error", "Erreur lors de la mise à jour: " + e.getMessage());
             return "redirect:/demandes/edit/" + id;
         }
-
         return "redirect:/demandes";
     }
 
@@ -153,24 +121,10 @@ public class DemandeFormationController {
         return "redirect:/demandes";
     }
 
-    @PatchMapping("/{id}/statut")
-    public ResponseEntity<?> updateStatut(
-            @PathVariable Long id,
-            @RequestParam String statut) {
-
-        try {
-            DemandeFormationDTO demande = demandeFormationService.getDemandeById(id);
-            demande.setStatut(statut); // Validez le statut ici !
-            demandeFormationService.updateDemande(id, demande);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    // Ajout d'une méthode pour lister toutes les demandes (si nécessaire)
+    @GetMapping
+    public String listDemandes(Model model) {
+        model.addAttribute("demandes", demandeFormationService.getAllDemandesWithFormation());
+        return "demandes/list";
     }
-
-
-
-
-
-
 }

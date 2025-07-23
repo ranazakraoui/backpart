@@ -24,6 +24,7 @@ public class DemandeFormation {
     @Column(nullable = false)
     private String statut = "EN_ATTENTE";
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "formation_id", nullable = false)
     private Formation formation;
