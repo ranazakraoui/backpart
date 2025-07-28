@@ -10,6 +10,7 @@ import com.example.demo.repository.FormationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,16 +29,14 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
 
     @Override
     public DemandeFormationDTO createDemande(DemandeFormationDTO demandeDTO) {
-        // Validation initiale
         if (demandeDTO.getFormationId() == null) {
             throw new IllegalArgumentException("L'ID de formation est obligatoire");
         }
 
-        // Valeurs par défaut
         demandeDTO.setStatut("EN_ATTENTE");
         demandeDTO.setDateDemande(new Date());
 
-        return this.saveDemande(demandeDTO);
+        return saveDemande(demandeDTO);
     }
 
     @Override
@@ -65,13 +64,11 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
         Formation formation = formationRepository.findById(demandeDTO.getFormationId())
                 .orElseThrow(() -> new NoSuchElementException("Formation non trouvée avec l'ID: " + demandeDTO.getFormationId()));
 
-        // Mise à jour des champs
         demande.setEmailCollaborateur(demandeDTO.getEmailCollaborateur());
         demande.setNomCollaborateur(demandeDTO.getNomCollaborateur());
         demande.setStatut(demandeDTO.getStatut());
         demande.setFormation(formation);
 
-        // Logique de planification automatique
         if ("APPROUVEE".equals(demandeDTO.getStatut())) {
             long approvedCount = demandeFormationRepository.countByFormationIdAndStatut(
                     formation.getId(),
@@ -111,13 +108,6 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
     }
 
     @Override
-    public long countByStatut(String statut) {
-        return statut == null ?
-                demandeFormationRepository.count() :
-                demandeFormationRepository.countByStatut(statut);
-    }
-
-    @Override
     public long countByFormationId(Long formationId) {
         return demandeFormationRepository.countByFormationId(formationId);
     }
@@ -134,23 +124,53 @@ public class DemandeFormationServiceImpl implements DemandeFormationService {
 
     @Override
     public List<FormationWithDemandCountDTO> getTopFormationsWithDemandCount() {
-        try {
-            List<Object[]> results = demandeFormationRepository.findTopFormationsWithDemandCount();
-            return results.stream()
-                    .filter(Objects::nonNull)
-                    .filter(result -> result.length >= 3)
-                    .map(result -> {
-                        Long id = result[0] != null ? ((Number) result[0]).longValue() : null;
-                        String titre = result[1] != null ? (String) result[1] : "Inconnu";
-                        Long count = result[2] != null ? ((Number) result[2]).longValue() : 0L;
-                        return new FormationWithDemandCountDTO(id, titre, count);
-                    })
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("Erreur lors de la récupération des formations", e);
-        }
+        return demandeFormationRepository.findTopFormationsWithDemandCount()
+                .stream()
+                .map(result -> new FormationWithDemandCountDTO(
+                        (Long) result[0],
+                        (String) result[1],
+                        (Long) result[2]
+                ))
+                .collect(Collectors.toList());
     }
 
+    @Override
+    public long countDistinctUsers() {
+        return demandeFormationRepository.countDistinctEmailCollaborateur();
+    }
+
+    @Override
+    public long countAllDemandes() {
+        return demandeFormationRepository.count();
+    }
+
+    @Override
+    public long countByStatut(String statut) {
+        return demandeFormationRepository.countByStatut(statut);
+    }
+
+    @Override
+    public Map<String, Long> getMonthlyEvolution() {
+        List<Object[]> results = demandeFormationRepository.getMonthlyEvolution();
+        Map<String, Long> monthlyStats = new LinkedHashMap<>();
+
+        for (Object[] result : results) {
+            int month = (int) result[0];
+            long count = (long) result[1];
+            monthlyStats.put(getMonthName(month), count);
+        }
+
+        // Remplir les mois manquants avec 0
+        for (int i = 1; i <= 12; i++) {
+            String monthName = getMonthName(i);
+            monthlyStats.putIfAbsent(monthName, 0L);
+        }
+
+        return monthlyStats;
+    }
+    private String getMonthName(int month) {
+        return new DateFormatSymbols(Locale.FRENCH).getMonths()[month-1];
+    }
     @Override
     public List<DemandeFormationDTO> getDemandesByFormationId(Long formationId) {
         return demandeFormationRepository.findByFormationId(formationId)

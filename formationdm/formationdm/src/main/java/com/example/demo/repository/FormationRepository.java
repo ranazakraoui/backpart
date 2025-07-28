@@ -1,34 +1,39 @@
 package com.example.demo.repository;
 
 import com.example.demo.model.Formation;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface FormationRepository extends JpaRepository<Formation, Long> {
 
-    // Méthodes de base
-    Page<Formation> findAll(Pageable pageable);
-    List<Formation> findAll(Sort sort);
+    List<Formation> findByPlanifiee(boolean planifiee);
 
-    // Méthodes de filtrage avec pagination
-    List<Formation> findByTitreContainingIgnoreCase(String titre, Sort sort);
-    List<Formation> findByPlanifiee(boolean planifiee, Sort sort);
-    List<Formation> findByDureeBetween(int minDuree, int maxDuree, Sort sort);
+    long countByPlanifiee(boolean planifiee);
 
-    // ➕ AJOUT À FAIRE ICI : version avec Pageable
-    Page<Formation> findByTitreContainingIgnoreCase(String titre, Pageable pageable);
-    Page<Formation> findByPlanifiee(Boolean planifiee, Pageable pageable);
-    Page<Formation> findByDureeBetween(Integer minDuree, Integer maxDuree, Pageable pageable);
+    List<Formation> findByTitreContainingIgnoreCase(String titre);
 
-    // Méthodes de comptage
+    List<Formation> findByDureeBetween(int minDuree, int maxDuree);
+
     @Query("SELECT COUNT(d) FROM DemandeFormation d WHERE d.formation.id = :formationId")
     Long countDemandesByFormationId(@Param("formationId") Long formationId);
+    @Query("SELECT f.titre, COUNT(d) FROM DemandeFormation d JOIN d.formation f GROUP BY f.titre")
+    List<Object[]> countDemandesByFormationTitle();
+    // Pour la pagination
+    org.springframework.data.domain.Page<Formation> findByTitreContainingIgnoreCase(String titre, org.springframework.data.domain.Pageable pageable);
 
-    Long countByDemandes_Formation_Id(Long id);
+    org.springframework.data.domain.Page<Formation> findByPlanifiee(boolean planifiee, org.springframework.data.domain.Pageable pageable);
+
+    org.springframework.data.domain.Page<Formation> findByDureeBetween(int minDuree, int maxDuree, org.springframework.data.domain.Pageable pageable);
+
+    // Pour le tri
+    List<Formation> findByTitreContainingIgnoreCase(String titre, org.springframework.data.domain.Sort sort);
+
+    List<Formation> findByPlanifiee(boolean planifiee, org.springframework.data.domain.Sort sort);
+
+    List<Formation> findByDureeBetween(int minDuree, int maxDuree, org.springframework.data.domain.Sort sort);
 }

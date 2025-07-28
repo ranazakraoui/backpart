@@ -133,6 +133,16 @@
 			<groupId>javax.cache</groupId>
 			<artifactId>cache-api</artifactId>
 		</dependency>
+
+
+
+
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.3</version> <!-- Vérifie la dernière version si besoin -->
+		</dependency>
+
 	</dependencies>
 
 	<build>

@@ -16,6 +16,9 @@ public interface DemandeFormationService {
     List<DemandeFormationDTO> getAllDemandes();
     List<DemandeFormationDTO> getDemandesByFormationId(Long formationId);
     List<DemandeFormationDTO> getAllDemandesWithFormation();
+    long countDistinctUsers();
+    long countAllDemandes();
+    Map<String, Long> getMonthlyEvolution();
 
     // Méthodes de statistiques
     long countByStatut(String statut);
